@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import './Recorder.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectDateStart, start, stop } from '../../redux/recorder';
+import { addZero } from '../../lib/utils';
 
 const Recorder: React.FC = () => {
   const dispatch = useDispatch();

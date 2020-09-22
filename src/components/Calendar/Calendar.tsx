@@ -26,19 +26,19 @@ const createDateKey = (date: Date) => {
   return `${year}-${addZero(month)}-${addZero(day)}`;
 }
 
-const addToGroup = (dateKey: string, event: UserEvent) => {
-  if (groups[dateKey] === undefined) {
-    groups[dateKey] = [];
-  }
-
-  groups[dateKey].push(event);
-};
-
 const groupEventsByDay = (events: UserEvent[]) => {
   const groups: Record<string, UserEvent[]> = {};
 
+  const addToGroup = (dateKey: string, event: UserEvent) => {
+    if (groups[dateKey] === undefined) {
+      groups[dateKey] = [];
+    }
+
+    groups[dateKey].push(event);
+  };
+
   events.forEach(event => {
-    const dateStartKey = createDateKey(new Date(event.startDate));
+    const dateStartKey = createDateKey(new Date(event.dateStart));
     const dateEndKey = createDateKey(new Date(event.dateEnd));
 
     addToGroup(dateStartKey, event);
@@ -63,28 +63,44 @@ const Calendar: React.FC<Props> = ({ events, loadUserEvents }) => {
   if(events.length) {
     groupedEvents = groupEventsByDay(events);
     sortedGroupKeys = Object.keys(groupedEvents).sort(
-      (date1, date2) => +new Date(date1) - +new Date(date2)
+      (date1, date2) => +new Date(date1) - +new Date(date2) // convert to milliseconds
     );
   }
 
-  return (
+  return groupedEvents && sortedGroupKeys ? (
     <div className="calendar">
-      <div className="calendar-day">
-        <div className="calendar-day-label">
-          <span>1 March</span>
-        </div>
-        <div className="calendar-events">
-          <div className="calendar-event">
-            <div className="calendar-event-info">
-              <div className="calendar-event-time">10:00 - 12:00</div>
-              <div className="calendar-event-title">Having brunch</div>
+      {sortedGroupKeys.map(dayKey => {
+        const events = groupedEvents ? groupedEvents[dayKey] : [];
+        const groupDate = new Date(dayKey);
+        const day = groupDate.getDate();
+        const month = groupDate.toLocaleString(undefined, { month: 'long'});
+        return (
+          <div className="calendar-day">
+            <div className="calendar-day-label">
+              <span>
+                {day} {month}
+              </span>
             </div>
-            <button className="calendar-event-delete-button">&times;</button>
+            <div className="calendar-events">
+              {events.map(event => {
+                return (
+                  <div className="calendar-event">
+                    <div className="calendar-event-info">
+                      <div className="calendar-event-time">10:00 - 12:00</div>
+                      <div className="calendar-event-title">{event.title}</div>
+                    </div>
+                    <button className="calendar-event-delete-button">
+                      &times;
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </div>
+        );
+      })}
     </div>
-  );
+  ) : <p>Loading...</p>
 }
 
 export default connector(Calendar);
