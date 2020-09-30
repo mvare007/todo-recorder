@@ -2,8 +2,13 @@ import React, { useEffect } from 'react';
 import './Calendar.css';
 import { connect, ConnectedProps } from 'react-redux';
 import { RootState } from '../../redux/store';
-import { selectUserEventsArray, loadUserEvents, UserEvent } from '../../redux/user-events';
+import {
+  selectUserEventsArray,
+  loadUserEvents,
+  UserEvent,
+} from '../../redux/user-events';
 import { addZero } from '../../lib/utils';
+import EventItem from './EventItem';
 
 const mapState = (state: RootState) => ({
   events: selectUserEventsArray(state)
@@ -21,10 +26,10 @@ interface Props extends PropsFromRedux {}
 
 const createDateKey = (date: Date) => {
   const year = date.getUTCFullYear();
-  const month = date.getUTCMonth();
+  const month = date.getUTCMonth() + 1; //January is 0
   const day = date.getUTCDate();
   return `${year}-${addZero(month)}-${addZero(day)}`;
-}
+};
 
 const groupEventsByDay = (events: UserEvent[]) => {
   const groups: Record<string, UserEvent[]> = {};
@@ -37,7 +42,7 @@ const groupEventsByDay = (events: UserEvent[]) => {
     groups[dateKey].push(event);
   };
 
-  events.forEach(event => {
+  events.forEach((event) => {
     const dateStartKey = createDateKey(new Date(event.dateStart));
     const dateEndKey = createDateKey(new Date(event.dateEnd));
 
@@ -52,7 +57,6 @@ const groupEventsByDay = (events: UserEvent[]) => {
 };
 
 const Calendar: React.FC<Props> = ({ events, loadUserEvents }) => {
-
   useEffect(() => {
     loadUserEvents();
   }, []);
@@ -60,7 +64,7 @@ const Calendar: React.FC<Props> = ({ events, loadUserEvents }) => {
   let groupedEvents: ReturnType<typeof groupEventsByDay> | undefined;
   let sortedGroupKeys: string[] | undefined;
 
-  if(events.length) {
+  if (events.length) {
     groupedEvents = groupEventsByDay(events);
     sortedGroupKeys = Object.keys(groupedEvents).sort(
       (date1, date2) => +new Date(date1) - +new Date(date2) // convert to milliseconds
@@ -69,11 +73,11 @@ const Calendar: React.FC<Props> = ({ events, loadUserEvents }) => {
 
   return groupedEvents && sortedGroupKeys ? (
     <div className="calendar">
-      {sortedGroupKeys.map(dayKey => {
+      {sortedGroupKeys.map((dayKey) => {
         const events = groupedEvents ? groupedEvents[dayKey] : [];
         const groupDate = new Date(dayKey);
         const day = groupDate.getDate();
-        const month = groupDate.toLocaleString(undefined, { month: 'long'});
+        const month = groupDate.toLocaleString(undefined, { month: 'long' });
         return (
           <div className="calendar-day">
             <div className="calendar-day-label">
@@ -82,25 +86,17 @@ const Calendar: React.FC<Props> = ({ events, loadUserEvents }) => {
               </span>
             </div>
             <div className="calendar-events">
-              {events.map(event => {
-                return (
-                  <div className="calendar-event">
-                    <div className="calendar-event-info">
-                      <div className="calendar-event-time">10:00 - 12:00</div>
-                      <div className="calendar-event-title">{event.title}</div>
-                    </div>
-                    <button className="calendar-event-delete-button">
-                      &times;
-                    </button>
-                  </div>
-                );
+              {events.map((event) => {
+                return <EventItem key={`event_${event.id}`} event={event} />;
               })}
             </div>
           </div>
         );
       })}
     </div>
-  ) : <p>Loading...</p>
-}
+  ) : (
+    <p>Loading...</p>
+  );
+};
 
 export default connector(Calendar);

@@ -20,7 +20,7 @@ const Recorder: React.FC = () => {
     } else {
       dispatch(start());
       interval.current = window.setInterval(() => {
-        setCount(count => count + 1);
+        setCount((count) => count + 1);
       }, 1000);
     }
   };
@@ -30,10 +30,10 @@ const Recorder: React.FC = () => {
     return () => {
       window.clearInterval(interval.current);
     };
-  }, [] );
+  }, []);
 
-  let seconds = started ?
-    Math.floor((Date.now() - new Date(dateStart).getTime()) / 1000)
+  let seconds = started
+    ? Math.floor((Date.now() - new Date(dateStart).getTime()) / 1000)
     : 0;
   const hours = seconds ? Math.floor(seconds / 60 / 60) : 0;
   seconds -= hours * 60 * 60;
