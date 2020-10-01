@@ -42,7 +42,7 @@ export const loadUserEvents = (): ThunkAction<
   LoadRequestAction | LoadSuccessAction | LoadFailureAction
 > => async (dispatch, getState) => {
   dispatch({
-    type: LOAD_REQUEST
+    type: LOAD_REQUEST,
   });
 
   try {
@@ -51,12 +51,12 @@ export const loadUserEvents = (): ThunkAction<
 
     dispatch({
       type: LOAD_SUCCESS,
-      payload: { events }
+      payload: { events },
     });
   } catch (e) {
     dispatch({
       type: LOAD_FAILURE,
-      error: 'Failed to load the events.'
+      error: 'Failed to load the events.',
     });
   }
 };
@@ -84,7 +84,7 @@ export const createUserEvent = (): ThunkAction<
   CreateRequestAction | CreateSuccessAction | CreateFailureAction
 > => async (dispatch, getState) => {
   dispatch({
-    type: CREATE_REQUEST
+    type: CREATE_REQUEST,
   });
 
   try {
@@ -92,7 +92,7 @@ export const createUserEvent = (): ThunkAction<
     const event: Omit<UserEvent, 'id'> = {
       title: 'Add event name',
       dateStart,
-      dateEnd: new Date().toISOString()
+      dateEnd: new Date().toISOString(),
     };
 
     const response = await fetch(api, {
@@ -100,18 +100,18 @@ export const createUserEvent = (): ThunkAction<
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(event)
+      body: JSON.stringify(event),
     });
 
     const createdEvent: UserEvent = await response.json();
 
     dispatch({
       type: CREATE_SUCCESS,
-      payload: { event: createdEvent }
+      payload: { event: createdEvent },
     });
   } catch (e) {
     dispatch({
-      type: CREATE_FAILURE
+      type: CREATE_FAILURE,
     });
   }
 };
@@ -156,6 +156,50 @@ export const deleteUserEvent = (
   }
 };
 
+const UPDATE_REQUEST = 'userEvents/update_request';
+
+interface UpdateRequestAction extends Action<typeof UPDATE_REQUEST> {}
+
+const UPDATE_SUCCESS = 'userEvents/update_success';
+
+interface UpdateSuccessAction extends Action<typeof UPDATE_SUCCESS> {
+  payload: { event: UserEvent };
+}
+
+const UPDATE_FAILURE = 'userEvents/update_failure';
+
+interface UpdateFailureAction extends Action<typeof UPDATE_FAILURE> {}
+
+export const updateUserEvent = (
+  event: UserEvent
+): ThunkAction<
+  Promise<void>,
+  RootState,
+  undefined,
+  UpdateRequestAction | UpdateSuccessAction | UpdateFailureAction
+> => async (dispatch) => {
+  dispatch({
+    type: UPDATE_REQUEST,
+  });
+
+  try {
+    const response = await fetch(api + `/${event.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(event),
+    });
+    const updatedEvent: UserEvent = await response.json();
+
+    dispatch({ type: UPDATE_SUCCESS, payload: { event: updatedEvent } });
+  } catch (e) {
+    dispatch({
+      type: UPDATE_FAILURE,
+    });
+  }
+};
+
 const selectUserEventsState = (rootState: RootState) => rootState.userEvents;
 
 export const selectUserEventsArray = (rootState: RootState) => {
@@ -165,12 +209,12 @@ export const selectUserEventsArray = (rootState: RootState) => {
 
 const initialState: UserEventsState = {
   byIds: {},
-  allIds: []
+  allIds: [],
 };
 
 const userEventsReducer = (
   state: UserEventsState = initialState,
-  action: LoadSuccessAction | CreateSuccessAction | DeleteSuccessAction
+  action: LoadSuccessAction | CreateSuccessAction | DeleteSuccessAction | UpdateSuccessAction
 ) => {
   switch (action.type) {
     case LOAD_SUCCESS:
@@ -187,7 +231,7 @@ const userEventsReducer = (
       return {
         ...state,
         allIds: [...state.allIds, event.id],
-        byIds: { ...state.byIds, [event.id]: event }
+        byIds: { ...state.byIds, [event.id]: event },
       };
 
     case DELETE_SUCCESS:
@@ -199,6 +243,13 @@ const userEventsReducer = (
       };
       delete newState.byIds[id];
       return newState;
+
+    case UPDATE_SUCCESS:
+      const { event: updatedEvent } = action.payload;
+      return {
+        ...state,
+        byIds: { ...state.byIds, [updatedEvent.id]: updatedEvent }
+      };
 
     default:
       return state;
